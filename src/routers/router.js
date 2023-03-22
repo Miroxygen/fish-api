@@ -1,5 +1,6 @@
 import { router as authenticationRouter } from "./authenticationRouter.js"
 import { router as destroySessionRouter } from "./destroySessionRouter.js"
+import { router as catchesRouter } from "./catchesRouter.js"
 import Router from 'koa-router'
 import halson from 'halson' //if not using typescript, ignore error
 import 'dotenv/config'
@@ -11,10 +12,12 @@ router.get('/', (ctx, next) => {
   if(ctx.session.auth) {
     links = halson({})
     .addLink('self', `${process.env.BASE_URL}/`)
-    .addLink('log-out', `${process.env.BASE_URL}/log-out`)
+    .addLink('fish-catches', `${process.env.BASE_URL}/fish-catches`, { method: 'GET'})
+    .addLink('log-out', `${process.env.BASE_URL}/log-out`, { method: 'GET'})
   } else {
     links = halson({})
     .addLink('self', `${process.env.BASE_URL}/`)
+    .addLink('fish-catches', `${process.env.BASE_URL}/fish-catches`, { method: 'GET'})
     .addLink('auth', `${process.env.BASE_URL}/auth`, { method: 'GET' })
   }
   ctx.body = {
@@ -27,3 +30,5 @@ router.get('/', (ctx, next) => {
 router.use('/auth', authenticationRouter.routes())
 
 router.use('/log-out', destroySessionRouter.routes())
+
+router.use('/fish-catches', catchesRouter.routes())
