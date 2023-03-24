@@ -1,10 +1,13 @@
 import mongoose from "mongoose"
 
 const schema = new mongoose.Schema({
+  owner: {
+    type: String,
+    required: true,
+  },
   catcher: {
     type: String,
     required: [true, 'Catcher is required.'],
-    match: [/^[A-Za-z][A-Za-z0-9_-]{2,255}$/, 'Please provide a valid name.']
   },
   position: {
     type: String,
@@ -36,5 +39,7 @@ const schema = new mongoose.Schema({
   catchTimestamp: {
     type: String,
     required: [true, 'Timestamp of catch is required.'],
-  },
+  }
 })
+
+export const FishCatch = mongoose.model('FishCatch', schema)

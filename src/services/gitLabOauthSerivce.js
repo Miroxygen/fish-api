@@ -15,7 +15,7 @@ export class GitLabOauthService {
       return url
     }
   
-    async getAccessToken(code) {
+    async getAccessData(code) {
       const formData = new URLSearchParams()
       formData.append('client_id', this.clientId)
       formData.append('client_secret', this.clientSecret)
@@ -29,6 +29,7 @@ export class GitLabOauthService {
       })
   
       const data = await response.json()
-      return data.access_token
+
+      return data
     }
   }

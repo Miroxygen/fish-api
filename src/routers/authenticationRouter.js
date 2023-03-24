@@ -11,30 +11,20 @@ const authController = new AuthController(service)
 
 
 router.get('/', authController.alreadyAuthenticatedMiddleware, (ctx, next) => {
-  const links = halson({})
-  .addLink('self', `${process.env.BASE_URL}/auth`)
-  .addLink('entry point', `${process.env.BASE_URL}/`, { method: 'GET' })
-  .addLink('authentication-redirect', `${process.env.BASE_URL}/auth/gitlab`, {method : 'GET'})
-ctx.body = {
-  statusbar : 200,
-  message: 'Logga in här!',
-  _links: links
-}
+  authController.displayAuthPage(ctx)
+})
+
+router.post('/auth-with-token', authController.alreadyAuthenticatedMiddleware, async (ctx, next) => {
+  await authController.authenticateWithToken(ctx, process.env.BASE_GITLABURL)
 })
 
 
 router.get('/gitlab', authController.alreadyAuthenticatedMiddleware, (ctx, next) => {
-  const url = service.getAuthorizationUrl()
-  ctx.redirect(url)
+  authController.redirectToAuthUrl(ctx)
 })
 
 router.get('/gitlab/callback', authController.alreadyAuthenticatedMiddleware, async (ctx, next) => {
-  const code = ctx.query.code
-  const token = await service.getAccessToken(code)
-  console.log(token)
-  ctx.session.token = token
-  ctx.session.auth = true
-  ctx.redirect(`/auth/token`)
+  authController.handleCallBack(ctx)
 })
 
 router.get('/token', (ctx, next) => {
