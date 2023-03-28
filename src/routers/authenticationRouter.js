@@ -1,38 +1,44 @@
 import Router from 'koa-router'
 import halson from 'halson' //if not using typescript, ignore error
-import { GitLabOauthService } from '../services/gitLabOauthSerivce.js'
-import { AuthController } from '../controllers/authController.js'
 import 'dotenv/config'
+import { alreadyAuthenticatedMiddleware, notAuthenticatedMiddleware } from '../middleware/authMiddleware.js'
 
 export const router = new Router()
 
-const service = new GitLabOauthService(process.env.CLIENT_ID, process.env.CLIENT_SECRET, process.env.CALLBACK_URL, process.env.BASE_GITLABURL)
-const authController = new AuthController(service)
+
+const resolveAuthController = (ctx) => ctx.container.resolve('AuthController')
+
+//const resolveAuthMiddleware = (ctx) => ctx.container.resolve('AuthMiddleware')
 
 
-router.get('/', authController.alreadyAuthenticatedMiddleware, (ctx, next) => {
-  authController.displayAuthPage(ctx)
+router.get('/', alreadyAuthenticatedMiddleware, (ctx, next) => {
+  resolveAuthController(ctx).displayAuthPage(ctx)
 })
 
-router.post('/auth-with-token', authController.alreadyAuthenticatedMiddleware, async (ctx, next) => {
-  await authController.authenticateWithToken(ctx, process.env.BASE_GITLABURL)
+router.post('/auth-with-token', alreadyAuthenticatedMiddleware, async (ctx, next) => {
+  await resolveAuthController(ctx).authenticateWithToken(ctx, process.env.BASE_GITLABURL)
+})
+
+router.post('/test', notAuthenticatedMiddleware, (ctx, next) => {
+  resolveAuthController(ctx).verifyInternalToken(ctx)
 })
 
 
-router.get('/gitlab', authController.alreadyAuthenticatedMiddleware, (ctx, next) => {
-  authController.redirectToAuthUrl(ctx)
+router.get('/gitlab', alreadyAuthenticatedMiddleware, (ctx, next) => {
+  resolveAuthController(ctx).redirectToAuthUrl(ctx)
 })
 
-router.get('/gitlab/callback', authController.alreadyAuthenticatedMiddleware, async (ctx, next) => {
-  authController.handleCallBack(ctx)
+router.get('/gitlab/callback', alreadyAuthenticatedMiddleware, (ctx, next) => {
+  resolveAuthController(ctx).handleCallBack(ctx)
 })
 
-router.get('/token', (ctx, next) => {
+router.get('/token', notAuthenticatedMiddleware, (ctx, next) => {
+  const token = resolveAuthController(ctx).generateInternalToken(ctx)
   const links = halson({})
   .addLink('self', `${process.env.BASE_URL}/auth/token`)
   .addLink('entry point', `${process.env.BASE_URL}/`, { method: 'GET' })
   ctx.body = {
-    message : `Use this token for future authenticationrequests : ${ctx.session.token}`,
+    message : `Use this token for future authenticationrequests : ${token}`,
     _links : links
   }
 })

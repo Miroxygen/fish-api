@@ -1,9 +1,9 @@
 import mongoose from "mongoose"
 
 const schema = new mongoose.Schema({
-  owner: {
-    type: String,
-    required: true,
+  fish_id : {
+    type : Number,
+    required : true
   },
   catcher: {
     type: String,
@@ -29,9 +29,9 @@ const schema = new mongoose.Schema({
     type: String,
     required: [true, 'Weight is required.'],
   },
-  lenght: {
+  length: {
     type: String,
-    required: [true, 'Lenght is required.'],
+    required: [true, 'Length is required.'],
   },
   imageUrl: {
     type: String,

@@ -5,12 +5,18 @@ import helmet from 'koa-helmet'
 import session from "koa-session"
 import bodyParser from "koa-bodyparser"
 import { connectDB } from "./config/mongoose.js"
+import { container } from "./config/bootstrap.js"
 
 try {
 
   await connectDB()
   
   const app = new Koa()
+
+  app.use(async (ctx, next) => {
+    ctx.container = container
+    await next()
+  })
 
   app.keys = [process.env.SESSION_SECRET]
 

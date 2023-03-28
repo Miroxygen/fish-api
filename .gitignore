@@ -145,4 +145,10 @@ dist
 # .pem file
 c.pem
 
+# key files
+.key
+
 # End of https://www.toptal.com/developers/gitignore/api/node
+public.key
+.key
+private.key

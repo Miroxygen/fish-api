@@ -1,7 +1,7 @@
 import { GitLabOauthService } from '../services/gitLabOauthSerivce.js'
-import Router from 'koa-router'
 import 'dotenv/config'
 import fetch from 'node-fetch'
+import jwt from 'jsonwebtoken'
 
 
 export class AuthController {
@@ -37,7 +37,7 @@ export class AuthController {
     ctx.redirect(`/auth/token`)
   }
 
-  async authenticateWithToken(ctx, baseUrl) {
+  async authenticateWithExternalToken(ctx, baseUrl) {
     try {
       let token = ""
       const authHeader = ctx.request.headers['authorization']
@@ -65,15 +65,32 @@ export class AuthController {
     }
   }
 
-  alreadyAuthenticatedMiddleware(ctx, next) {
-    if (!ctx.session.auth) {
-      return next()
-    } else {
-      const links = {
-        entryPoint : `${process.env.BASE_URL}/`,
+  generateInternalToken(ctx) {
+    const tokenExpirationToNumber = parseInt(process.env.TOKEN_EXPIRATION)
+    const tokenExpirationTime = Math.floor(Date.now() / 1000) + tokenExpirationToNumber
+    const payload = {user : ctx.session.id, exp : tokenExpirationTime}
+    console.log(payload)
+    const privateKey = process.env.PRIVATE_KEY.replace(/\\n/gm, '\n')
+    const accessToken = jwt.sign(payload, privateKey, {
+      algorithm : 'RS256'
+    })
+    return accessToken
+  }
+
+  verifyInternalToken(ctx, next) {
+    try {
+      const [authHeader, token] = ctx.request.headers['authorization']?.split(' ')
+      if (authHeader !== 'Bearer') {
+        throw new Error('Invalid header')
       }
-      ctx.status = 403 
-      ctx.body = { message: 'Already authenticated', _links : links }
+      const publicKey = process.env.PUBLIC_KEY.replace(/\\n/gm, '\n')
+      const decoded = jwt.verify(token, publicKey)
+      console.log(decoded.user)
+      next()
+    } catch (error) {
+      console.log(error)
+      ctx.status = 401
+      ctx.body = "Token invalid or not provided."
     }
   }
 }
