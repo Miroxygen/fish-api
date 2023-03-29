@@ -1,12 +1,19 @@
 import { FishCatch } from '../models/fishModel.js'
 import 'dotenv/config'
 
-
+/**
+ * Controller for catches.
+ */
 export class CatchController {
   constructor() {
 
   }
 
+  /**
+   * Registers a catch to the database.
+   * @param {object} ctx Koa req, res object.
+   * @param {object} next Koa next object.
+   */
   async registerCatch(ctx, next) {
     try {
       const  {catcher, position, waterBodyName, city, species, weight, length, imageUrl, catchTimestamp} = ctx.request.body
@@ -46,6 +53,12 @@ export class CatchController {
     }
   }
 
+  /**
+   * Returns all catches from the database.
+   * @param {object} ctx Koa req, res object.
+   * @param {object} next Koa next object.
+   * @returns Array of catches.
+   */
   async getAllCatches(ctx, next) {
     try {
       let catches = await FishCatch.find();
@@ -70,10 +83,14 @@ export class CatchController {
     }
   }
 
+  /**
+   * Returns one catch from the database based on param id.
+   * @param {object} ctx Koa req, res object.
+   */
   async getFishCatchById(ctx) {
     try {
       const fishCatch = await FishCatch.find({ fish_id : parseInt(ctx.params.id)})
-      if(fishCatch) {
+      if(fishCatch && fishCatch[0] !== undefined) {
         const catchData = fishCatch.map(fish => ({
           fishId: fish.fish_id,
           catcher: fish.catcher,
@@ -99,14 +116,90 @@ export class CatchController {
     }
   }
 
-  async getCatchCount(ctx, next) {
-    const catchCount = await FishCatch.countDocuments()
-    return catchCount
+  /**
+   * PUT request for catch, updating all the required fields.
+   * @param {object} ctx Koa req, res object.
+   */
+  async putCatch(ctx) {
+    try {
+      const  {catcher, position, waterBodyName, city, species, weight, length, imageUrl, catchTimestamp} = ctx.request.body
+      const catchInfo = {catcher, position, waterBodyName, city, species, weight, length, catchTimestamp}
+      for(let key in catchInfo) {
+        if(catchInfo.hasOwnProperty(key)) {
+          if(typeof catchInfo[key] === undefined) {
+            ctx.status = 400
+            ctx.body = {
+              statusbar : 400,
+              message : "The request cannot or will not be processed due to something that is perceived to be a client error (for example validation error)."
+            }
+          } else {
+            await FishCatch.updateOne({ fish_id : parseInt(ctx.params.id) }, ctx.request.body)
+            ctx.status = 200
+            ctx.body = {Message : `Succesfull PUT of entry with id: ${ctx.params.id}`}
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      ctx.status = 500
+      ctx.body = { Message: "Internal server error." }
+    }
   }
 
+  /**
+   * Patch request that updates certain fields of one catch.
+   * @param {object} ctx Koa req, res object.
+   */
+  async patchCatch(ctx) {
+    try {
+      await FishCatch.updateOne({ fish_id : parseInt(ctx.params.id) }, ctx.request.body)
+      ctx.status = 200
+      ctx.body = {Message : `Succesfully patched entry with id: ${ctx.params.id}`}
+    } catch (error) {
+      console.log(error)
+      ctx.status = 500
+      ctx.body = { Message: "Internal server error." }
+    }
+  }
+
+  /**
+   * Deletes a catchentry from the database.
+   * @param {object} ctx Koa req, res object.
+   */
+  async deleteCatch(ctx) {
+    try {
+      const result = await FishCatch.deleteOne({ fish_id : parseInt(ctx.params.id) })
+      if(result.deletedCount === 1) {
+        ctx.status = 200
+        ctx.body = {Message : `Succesfully deleted entry with id: ${ctx.params.id}`}
+      }
+    } catch (error) {
+      console.log(error)
+      ctx.status = 500
+      ctx.body = { Message: "Internal server error." }
+    }
+  }
+
+  /**
+   * Returns the id of the latest entry from catches.
+   * @param {object} ctx Koa req, res object.
+   * @param {object} next Koa next object.
+   * @returns 
+   */
+  async getLatestId(ctx, next) {
+    const latestCatch = await FishCatch.find().limit(1).sort({$natural:-1})
+    return latestCatch[0].fish_id
+  }
+
+  
+
+  /**
+   * Creates an ID based on the latest id.
+   * @returns Number ID.
+   */
   async createCatchId() {
-    const catchCount = await this.getCatchCount()
-    const catchId = catchCount  + 1
+    const latestId = await this.getLatestId()
+    const catchId = latestId  + 1
     return catchId
   }
 }

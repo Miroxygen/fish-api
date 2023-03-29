@@ -1,13 +1,11 @@
 import Router from 'koa-router'
 import halson from 'halson' //if not using typescript, ignore error
 import { verifyToken } from '../middleware/authMiddleware.js'
-import { CatchController } from '../controllers/catchController.js'
 
 export const router = new Router()
 
 const resolveCatchController = (ctx) => ctx.container.resolve('CatchController')
 
-const controller = new CatchController()
 
 router.get('/', (ctx, next) => {
   const links = halson({})
@@ -34,7 +32,7 @@ router.get('/all-catches', verifyToken, async (ctx, next) => {
 })
 
 
-router.get('/catch/:id',  async (ctx, next) => {
+router.get('/catch/:id', verifyToken,  async (ctx, next) => {
     await resolveCatchController(ctx).getFishCatchById(ctx)
 })
 

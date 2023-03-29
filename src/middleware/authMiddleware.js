@@ -54,7 +54,7 @@ export function notAuthenticatedMiddleware(ctx, next) {
   }
 }
 
-export function verifyToken(ctx, next) {
+export async function verifyToken(ctx, next) {
   try {
     const [authHeader, token] = ctx.request.headers['authorization']?.split(' ')
     if (authHeader !== 'Bearer') {
@@ -62,7 +62,7 @@ export function verifyToken(ctx, next) {
     }
     const publicKey = process.env.PUBLIC_KEY.replace(/\\n/gm, '\n')
     jwt.verify(token, publicKey)
-    next()
+    await next()
   } catch (error) {
     console.log(error)
     ctx.status = 401

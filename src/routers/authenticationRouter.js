@@ -16,7 +16,7 @@ router.get('/', alreadyAuthenticatedMiddleware, (ctx, next) => {
 })
 
 router.post('/auth-with-token', alreadyAuthenticatedMiddleware, async (ctx, next) => {
-  await resolveAuthController(ctx).authenticateWithToken(ctx, process.env.BASE_GITLABURL)
+  await resolveAuthController(ctx).authenticateWithExternalToken(ctx, process.env.BASE_GITLABURL)
 })
 
 router.post('/test', notAuthenticatedMiddleware, (ctx, next) => {
