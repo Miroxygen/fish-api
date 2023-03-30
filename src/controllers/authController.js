@@ -68,7 +68,7 @@ export class AuthController {
   generateInternalToken(ctx) {
     const tokenExpirationToNumber = parseInt(process.env.TOKEN_EXPIRATION)
     const tokenExpirationTime = Math.floor(Date.now() / 1000) + tokenExpirationToNumber
-    const payload = {user : ctx.session.id, exp : tokenExpirationTime}
+    const payload = {user : ctx.session.id}
     console.log(payload)
     const privateKey = process.env.PRIVATE_KEY.replace(/\\n/gm, '\n')
     const accessToken = jwt.sign(payload, privateKey, {

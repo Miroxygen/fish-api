@@ -1,6 +1,7 @@
 import { router as authenticationRouter } from "./authenticationRouter.js"
 import { router as destroySessionRouter } from "./destroySessionRouter.js"
 import { router as catchesRouter } from "./catchesRouter.js"
+import { router as subscribeRouter } from "./subscribeRouter.js"
 import Router from 'koa-router'
 import halson from 'halson' //if not using typescript, ignore error
 import 'dotenv/config'
@@ -32,3 +33,5 @@ router.use('/auth', authenticationRouter.routes())
 router.use('/log-out', destroySessionRouter.routes())
 
 router.use('/fish-catches', catchesRouter.routes())
+
+router.use('/subscribe', subscribeRouter.routes())

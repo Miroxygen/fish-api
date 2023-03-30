@@ -38,7 +38,6 @@ export class CatchController {
         console.log(error)
         ctx.status = 400
         ctx.body = {
-          statusbar : 400,
           message : "The request cannot or will not be processed due to something that is perceived to be a client error (for example validation error)."
         }
       } else {
@@ -124,14 +123,14 @@ export class CatchController {
     try {
       const  {catcher, position, waterBodyName, city, species, weight, length, imageUrl, catchTimestamp} = ctx.request.body
       const catchInfo = {catcher, position, waterBodyName, city, species, weight, length, catchTimestamp}
-      for(let key in catchInfo) {
+      for(const [key, value] of Object.entries(catchInfo)) {
         if(catchInfo.hasOwnProperty(key)) {
-          if(typeof catchInfo[key] === undefined) {
+          if(value === undefined) {
             ctx.status = 400
             ctx.body = {
-              statusbar : 400,
               message : "The request cannot or will not be processed due to something that is perceived to be a client error (for example validation error)."
             }
+            break
           } else {
             await FishCatch.updateOne({ fish_id : parseInt(ctx.params.id) }, ctx.request.body)
             ctx.status = 200
