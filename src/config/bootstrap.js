@@ -2,30 +2,20 @@
  * Module for bootstrapping.
  */
 
-import { IoCContainer } from "../util/IoCContainer.js"
-import { AuthController } from "../controllers/authController.js"
-import { CatchController } from "../controllers/catchController.js"
-import { GitLabOauthService } from "../services/gitLabOauthSerivce.js"
-import { AuthMiddleware } from "../middleware/authMiddleware.js"
-import { SubscribeController } from "../controllers/subscribeController.js"
-
+import { IoCContainer } from '../util/IoCContainer.js'
+import { AuthController } from '../controllers/authController.js'
+import { CatchController } from '../controllers/catchController.js'
+import { SubscribeController } from '../controllers/subscribeController.js'
+import { TestDataManager } from '../util/testDataManager.js'
 
 const iocContainer = new IoCContainer()
 
-iocContainer.register('GitLabOauthServiceSingleton', GitLabOauthService, {
-  singleton : true
-})
-
-iocContainer.register('AuthController', AuthController, {
-  dependencies : [
-    'GitLabOauthServiceSingleton'
-  ]
-})
+iocContainer.register('AuthController', AuthController)
 
 iocContainer.register('CatchController', CatchController)
 
-iocContainer.register('AuthMiddleware', AuthMiddleware)
-
 iocContainer.register('SubscribeController', SubscribeController)
+
+iocContainer.register('TestDataManager', TestDataManager)
 
 export const container = Object.freeze(iocContainer)

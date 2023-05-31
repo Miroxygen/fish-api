@@ -1,23 +1,18 @@
 import Router from 'koa-router'
-import halson from 'halson' //if not using typescript, ignore error
+import { notAuthenticatedMiddleware } from '../middleware/authMiddleware.js'
 
 export const router = new Router()
 
-const requireAuth = (ctx, next) => {
-  if (ctx.session.auth) {
-    return next()
-  } else {
-    ctx.status = 401
-    ctx.body = { message: 'Authentication required' }
-  }
-}
-
-router.get('/', requireAuth, (ctx, next) => {
+router.get('/', notAuthenticatedMiddleware, (ctx, next) => {
   ctx.session = null
-  const links = halson({})
-  .addLink('entry point', `${process.env.BASE_URL}/`, { method: 'GET' })
+  const links = [
+    {
+      rel: 'entry-point',
+      href: `${process.env.BASE_URL}/`
+    }
+  ]
+  ctx.status = 200
   ctx.body = {
-    statusbar : 200,
     message: 'Succesfully logged out.',
     _links: links
   }

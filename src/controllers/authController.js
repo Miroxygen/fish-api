@@ -1,96 +1,112 @@
-import { GitLabOauthService } from '../services/gitLabOauthSerivce.js'
 import 'dotenv/config'
 import fetch from 'node-fetch'
 import jwt from 'jsonwebtoken'
 
-
+/**
+ * Controller for authentication.
+ */
 export class AuthController {
-  constructor(service = new GitLabOauthService) {
-    this.service = service
-  }
-
-  displayAuthPage(ctx) {
-    const links = {
-      'self' : `${process.env.BASE_URL}/auth`,
-      'entry point' : `${process.env.BASE_URL}/`,
-      'authentication-redirect' : `${process.env.BASE_URL}/auth/gitlab`,
-      'authentication with token' : `${process.env.BASE_URL}/auth/auth-with-token`,
-    }
+  /**
+   * Displays main entry with links and info.
+   *
+   * @param {object} ctx Koa req, res object.
+   */
+  displayAuthPage (ctx) {
+    const links = [
+      {
+        rel: 'entry-point',
+        href: `${process.env.BASE_URL}/`
+      },
+      {
+        rel: 'self',
+        href: `${process.env.BASE_URL}/auth`
+      },
+      {
+        rel: 'auth-with-token',
+        href: `${process.env.BASE_URL}/auth/auth-with-token`,
+        method: 'POST'
+      },
+      {
+        rel: 'token',
+        href: `${process.env.BASE_URL}/auth/token`,
+        message: 'If authenticated towards GitLab, receive a token here for use on unsafe methods on this API.'
+      }
+    ]
     ctx.status = 200
     ctx.body = {
-      message: 'Page for authentication. Authentication redirect will redirect you to a webpage for authentication. With token you post an authentication token for authentication.',
+      message: 'Page for authentication. Authenticate towards GitLab with OAuth and receive a token. Auth with that token. Then receive a token from this service to use in its API.',
       _links: links
     }
   }
 
-  redirectToAuthUrl(ctx) {
-    const url = this.service.getAuthorizationUrl()
-    ctx.redirect(url)
-  }
-
-  async handleCallBack(ctx) {
-    const code = ctx.query.code
-    const data = await this.service.getAccessData(code)
-    ctx.session.token = data.access_token
-    ctx.session.id = data.id_token
-    ctx.session.auth = true
-    ctx.redirect(`/auth/token`)
-  }
-
-  async authenticateWithExternalToken(ctx, baseUrl) {
+  /**
+   * Authenticates a token from an external authorization attempt, allowing
+   * the user to become authenticated on this service.
+   *
+   * @param {object} ctx Koa req, res object.
+   * @param {*} baseUrl The base url of the external authenticator.
+   */
+  async authenticateWithExternalToken (ctx, baseUrl) {
     try {
-      let token = ""
-      const authHeader = ctx.request.headers['authorization']
+      let token = ''
+      const authHeader = ctx.request.headers.authorization
       if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.split(' ')[1];
+        token = authHeader.split(' ')[1]
       }
       const response = await fetch(`${baseUrl}/oauth/token/info`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       })
-      if(response.status === 200) {
+      if (response.status === 200) {
         const tokenInfo = await response.json()
-        if(tokenInfo.active === true) {
-
+        if (tokenInfo.active === true) {
+          ctx.status = 200
+          ctx.body = 'Authorization token accepted.'
+          ctx.session.auth = true
         }
       }
-      ctx.status = 200
-      ctx.body = "Authorization token accepted."
-      ctx.session.auth = true
     } catch (error) {
       console.log(error)
-      ctx.status = 401
-      ctx.body = "Token invalid or not provided."
+      ctx.status = 498
+      ctx.body = 'Token invalid or not provided.'
     }
   }
 
-  generateInternalToken(ctx) {
-    const tokenExpirationToNumber = parseInt(process.env.TOKEN_EXPIRATION)
-    const tokenExpirationTime = Math.floor(Date.now() / 1000) + tokenExpirationToNumber
-    const payload = {user : ctx.session.id}
-    console.log(payload)
+  /**
+   * Generates a JWT token for use on this service.
+   *
+   * @param {object} ctx Koa req, res object.
+   * @returns {object} JWT token
+   */
+  generateInternalToken (ctx) {
+    const payload = { user: ctx.session.id }
     const privateKey = process.env.PRIVATE_KEY.replace(/\\n/gm, '\n')
     const accessToken = jwt.sign(payload, privateKey, {
-      algorithm : 'RS256'
+      algorithm: 'RS256'
     })
     return accessToken
   }
 
-  verifyInternalToken(ctx, next) {
+  /**
+   * Verifies that a token came from this service.
+   *
+   * @param {object} ctx Koa req, res object.
+   * @param {object} next Koa next object.
+   */
+  verifyInternalToken (ctx, next) {
     try {
-      const [authHeader, token] = ctx.request.headers['authorization']?.split(' ')
+      const [authHeader, token] = ctx.request.headers.authorization?.split(' ')
       if (authHeader !== 'Bearer') {
         throw new Error('Invalid header')
       }
       const publicKey = process.env.PUBLIC_KEY.replace(/\\n/gm, '\n')
-      const decoded = jwt.verify(token, publicKey)
-      console.log(decoded.user)
+      jwt.verify(token, publicKey)
       next()
     } catch (error) {
       console.log(error)
-      ctx.status = 401
-      ctx.body = "Token invalid or not provided."
+      ctx.status = 498
+      ctx.body = 'Token invalid or not provided.'
     }
   }
 }
