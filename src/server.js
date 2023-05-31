@@ -9,7 +9,7 @@ import { container } from "./config/bootstrap.js"
 
 try {
 
-  //await connectDB()
+  await connectDB()
   
   const app = new Koa()
 
