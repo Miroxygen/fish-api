@@ -60,11 +60,15 @@ export class AuthController {
       })
       if (response.status === 200) {
         const tokenInfo = await response.json()
-        if (tokenInfo.active === true) {
+        if (tokenInfo.expires_in !== 0) {
           ctx.status = 200
           ctx.body = 'Authorization token accepted.'
           ctx.session.auth = true
         }
+      } else {
+        console.log('here')
+        ctx.status = 401
+        ctx.body = "Unauthorized towards GitLab"
       }
     } catch (error) {
       console.log(error)
