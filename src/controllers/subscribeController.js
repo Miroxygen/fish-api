@@ -48,19 +48,23 @@ export class SubscribeController {
    */
   async deleteSubscriber (ctx) {
     try {
-      const clientSecret = ctx.request.body
+      const clientSecret = ctx.request.body.clientSecret
       if (!clientSecret) {
-        ctx.throw(400, 'Invalid clientsecret')
+        ctx.status = 400
+        ctx.body = 'Invalid clientsecret'
       }
       const result = await Subscriber.deleteOne({ clientSecret })
       if (result.deletedCount === 1) {
         ctx.status = 200
-        ctx.body = { Message: `Succesfully deleted entry with id: ${ctx.params.id}` }
+        ctx.body = { Message: `Succesfully deleted entry with secret: ${clientSecret}` }
       } else {
-        ctx.throw(404, 'Subscriber not found')
+        ctx.status = 404
+        ctx.body = 'Subscriber not found'
       }
     } catch (error) {
-      ctx.throw(500, 'Internal server error')
+      console.log(error)
+      ctx.status = 500
+      ctx.body = 'Internal server error'
     }
   }
 
