@@ -49,22 +49,40 @@ export class SubscribeController {
   async deleteSubscriber (ctx) {
     try {
       const clientSecret = ctx.request.body.clientSecret
-      if (!clientSecret) {
-        ctx.status = 400
-        ctx.body = 'Invalid clientsecret'
+      const url = ctx.request.body.url
+      if (!clientSecret || !url) {
+        throw new Error('Invalid data')
       }
-      const result = await Subscriber.deleteOne({ clientSecret })
+      const subscriber = await Subscriber.findOne({ url })
+      if (!subscriber) {
+        throw new Error('Subscriber not found')
+      }
+      if (clientSecret !== subscriber.clientSecret) {
+        throw new Error('Wrong client secret for URL')
+      }
+      const result = await Subscriber.deleteOne({ url })
       if (result.deletedCount === 1) {
         ctx.status = 200
-        ctx.body = { Message: `Succesfully deleted entry with secret: ${clientSecret}` }
+        ctx.body = { Message: `Successfully deleted entry with URL: ${url}` }
       } else {
-        ctx.status = 404
-        ctx.body = 'Subscriber not found'
+        ctx.status = 500
+        ctx.body = 'Delete request was not succesful.'
       }
     } catch (error) {
       console.log(error)
-      ctx.status = 500
-      ctx.body = 'Internal server error'
+      if (error.message === 'Invalid data') {
+        ctx.status = 422
+        ctx.body = 'Invalid data'
+      } else if (error.message === 'Subscriber not found') {
+        ctx.status = 404
+        ctx.body = 'Subscriber not found'
+      } else if (error.message === 'Wrong client secret for URL') {
+        ctx.status = 401
+        ctx.body = 'Wrong client secret for URL'
+      } else {
+        ctx.status = 500
+        ctx.body = 'Internal server error'
+      }
     }
   }
 

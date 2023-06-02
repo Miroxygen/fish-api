@@ -12,7 +12,6 @@ const schema = new mongoose.Schema({
   clientSecret: {
     type: String,
     required: true,
-    unique: true
   }
 })
 
